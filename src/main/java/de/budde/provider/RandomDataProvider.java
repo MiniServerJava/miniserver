@@ -34,23 +34,19 @@ public class RandomDataProvider implements InjectableProvider<RandomData, Parame
     @Override
     public Injectable<?> getInjectable(ComponentContext ic, RandomData a, Parameter p) {
         if ( RandomRequest.class.isAssignableFrom(p.getParameterClass()) ) {
-            return getInjectableRandomRequest();
+            return () -> {
+                String entity = null;
+                try {
+                    entity = convertStreamToString(RandomDataProvider.this.servletRequest.getInputStream());
+                    return RandomRequest.make_1(entity);
+                } catch ( IOException e ) {
+                    LOG.error("RandomRequest entity could not be parsed: " + entity, e);
+                    return null;
+                }
+            };
         } else {
             return null;
         }
-    }
-
-    private Injectable<RandomRequest> getInjectableRandomRequest() {
-        return () -> {
-            String entity = null;
-            try {
-                entity = convertStreamToString(RandomDataProvider.this.servletRequest.getInputStream());
-                return RandomRequest.make_1(entity);
-            } catch ( IOException e ) {
-                LOG.error("RandomRequest entity could not be parsed: " + entity, e);
-                return null;
-            }
-        };
     }
 
     static String convertStreamToString(InputStream is) {
