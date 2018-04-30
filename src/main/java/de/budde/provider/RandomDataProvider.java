@@ -2,51 +2,41 @@ package de.budde.provider;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 import java.util.Scanner;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.Provider;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.sun.jersey.api.model.Parameter;
-import com.sun.jersey.core.spi.component.ComponentContext;
-import com.sun.jersey.core.spi.component.ComponentScope;
-import com.sun.jersey.spi.inject.Injectable;
-import com.sun.jersey.spi.inject.InjectableProvider;
 
 import de.budde.param.RandomRequest;
 
 @Provider
-public class RandomDataProvider implements InjectableProvider<RandomData, Parameter> {
-    private static final Logger LOG = LoggerFactory.getLogger(RandomDataProvider.class);
+@Consumes("application/json")
+public class RandomDataProvider implements MessageBodyReader<RandomRequest> {
 
     @Override
-    public ComponentScope getScope() {
-        return ComponentScope.PerRequest;
+    public boolean isReadable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return type == RandomRequest.class;
     }
 
-    @Context
-    private HttpServletRequest servletRequest;
-
     @Override
-    public Injectable<?> getInjectable(ComponentContext ic, RandomData a, Parameter p) {
-        if ( RandomRequest.class.isAssignableFrom(p.getParameterClass()) ) {
-            return () -> {
-                String entity = null;
-                try {
-                    entity = convertStreamToString(RandomDataProvider.this.servletRequest.getInputStream());
-                    return RandomRequest.make_1(entity);
-                } catch ( IOException e ) {
-                    LOG.error("RandomRequest entity could not be parsed: " + entity, e);
-                    return null;
-                }
-            };
-        } else {
-            return null;
-        }
+    public RandomRequest readFrom(
+        Class<RandomRequest> type,
+        Type genericType,
+        Annotation[] annotations,
+        MediaType mediaType,
+        MultivaluedMap<String, String> httpHeaders,
+        InputStream entityStream)
+        throws IOException,
+        WebApplicationException {
+
+        String entity = convertStreamToString(entityStream);
+        return RandomRequest.make_1(entity);
     }
 
     static String convertStreamToString(InputStream is) {

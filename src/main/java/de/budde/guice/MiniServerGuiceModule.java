@@ -14,20 +14,19 @@ import de.budde.util.NoSecurity;
 import de.budde.util.RandomWorker;
 import de.budde.util.StrongSecurity;
 
-public class GuiceModule extends AbstractModule {
-    private static final Logger LOG = LoggerFactory.getLogger(GuiceModule.class);
+public class MiniServerGuiceModule extends AbstractModule {
+    private static final Logger LOG = LoggerFactory.getLogger(MiniServerGuiceModule.class);
     private final Properties serverProperties;
 
-    public GuiceModule(Properties serverProperties) {
+    public MiniServerGuiceModule(Properties serverProperties) {
         this.serverProperties = serverProperties;
     }
 
     @Override
     protected void configure() {
         try {
-            // bind(clazz.class).in(interface.class);
-            // bind(clazz.class).toInstance(singletonObject);
-            // bind(new TypeLiteral<Map<String, Clazz>>() {}).annotatedWith(Names.named("AnnotationWithout@")).toInstance(singletonObject);
+            // example of binding: bind(clazz.class).in(interface.class);
+            // example of binding: bind(new TypeLiteral<Map<String, Clazz>>() {}).annotatedWith(Names.named("AnnotationWithout@")).toInstance(singletonObject);
             Names.bindProperties(binder(), this.serverProperties); // bind all properties from the property file (1)
             String protocol = this.serverProperties.getProperty("delegate.protocol"); // construct object to inject for delegation (2)
             String address = this.serverProperties.getProperty("delegate.address");

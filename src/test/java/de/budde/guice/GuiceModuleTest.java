@@ -14,7 +14,7 @@ import de.budde.resources.HelloWorld;
 public class GuiceModuleTest {
 
     /**
-     * test the injection basics, independant from server requirements
+     * test the injection basics, independent from server requirements
      */
     @Test
     public void testWithTestProperties() throws Exception {
@@ -24,7 +24,7 @@ public class GuiceModuleTest {
         properties.put("p2", "property-2-overridden");
 
         // create the injector and then objects with constructor parameters injected
-        GuiceModule module = new GuiceModule(properties);
+        MiniServerGuiceModule module = new MiniServerGuiceModule(properties);
         Injector injector = Guice.createInjector(module);
         P1Injected p1 = injector.getInstance(P1Injected.class);
         P2Injected p2 = injector.getInstance(P2Injected.class);
@@ -41,9 +41,9 @@ public class GuiceModuleTest {
     public void testWithServerProperties() throws Exception {
         Properties testProperties = new Properties();
         testProperties.put("person.greeter", "Pid, the cavy");
-        ServletConfig config = new ServletConfig(testProperties);
-        config.getInjector();
-        Injector injector = config.getCreatedInjector();
+        MiniServerGuiceModule module = new MiniServerGuiceModule(testProperties);
+        MiniServerGuiceServletContextListener config = new MiniServerGuiceServletContextListener(module);
+        Injector injector = config.getInjector();
         HelloWorld helloWorldInjected = injector.getInstance(HelloWorld.class); // the same as below: new HelloWorld("Pid, the cavy");
         HelloWorld helloWorldDirect = new HelloWorld("Pid, the cavy");
         check(helloWorldInjected);

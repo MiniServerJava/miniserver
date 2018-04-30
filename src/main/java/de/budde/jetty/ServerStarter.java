@@ -18,9 +18,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.servlet.GuiceFilter;
 
-import de.budde.guice.ServletConfig;
+import de.budde.guice.MiniServerGuiceModule;
+import de.budde.guice.MiniServerGuiceServletContextListener;
 import de.budde.util.H;
-import de.budde.util.dbc.DbcException;
+import de.budde.util.dbc.DBC;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
@@ -66,12 +67,12 @@ public class ServerStarter {
      */
     Server start(List<String> defines) throws Exception {
         Properties propertiesMergedWithComandLine = loadAndMergeProperties(defines);
+        MiniServerGuiceModule guiceModule = new MiniServerGuiceModule(propertiesMergedWithComandLine);
 
         HandlerList handlers = new HandlerList();
 
         ServletContextHandler jerseyHandler = new ServletContextHandler(handlers, "/rest", ServletContextHandler.NO_SESSIONS);
-        ServletConfig jerseyConfig = new ServletConfig(propertiesMergedWithComandLine);
-        jerseyHandler.addEventListener(jerseyConfig);
+        jerseyHandler.addEventListener(new MiniServerGuiceServletContextListener(guiceModule));
         jerseyHandler.addFilter(GuiceFilter.class, "/*", null);
         jerseyHandler.addServlet(DefaultServlet.class, "/*");
 
@@ -83,28 +84,13 @@ public class ServerStarter {
         staticHandler.addServlet(staticHolder, "/*");
 
         String host = propertiesMergedWithComandLine.getProperty("self.address");
-        String httpPortProperty = propertiesMergedWithComandLine.getProperty("self.http");
-        int httpPort = H.notEmpty(httpPortProperty) ? Integer.parseInt(httpPortProperty) : -1;
-        String httpsPortProperty = propertiesMergedWithComandLine.getProperty("self.https");
-        int httpsPort = H.notEmpty(httpsPortProperty) ? Integer.parseInt(httpsPortProperty) : -1;
-        if ( host == null ) {
-            throw new DbcException("host must NOT be null. Otherwise a  server makes no sense at all :-)");
-        }
-        if ( httpPort <= 0 && httpsPort <= 0 ) {
-            throw new DbcException("either a http or a https port must be enabled. Otherwise a  server makes no sense at all :-)");
-        }
-        StringBuilder sb = new StringBuilder();
-        if ( httpPort > 0 ) {
-            sb.append("http://").append(host).append(":").append(httpPort);
-        }
-        if ( httpPort > 0 && httpsPort > 0 ) {
-            sb.append(" and ");
-        }
-        if ( httpsPort > 0 ) {
-            sb.append("https://").append(host).append(":").append(httpsPort);
-        }
-        String serverMessage = sb.toString();
-        LOG.info("starting at " + serverMessage);
+        int httpPort = Integer.parseInt(propertiesMergedWithComandLine.getProperty("self.http", "-1"));
+        int httpsPort = Integer.parseInt(propertiesMergedWithComandLine.getProperty("self.https", "-1"));
+        DBC.notNull(host, "host must NOT be null. Otherwise a server makes no sense at all :-)");
+        DBC.isTrue(httpPort <= 0 && httpsPort <= 0, "either a http or a https port must be enabled. Otherwise a  server makes no sense at all :-)");
+
+        String serverUrl = getServerUrlForLogging(host, httpPort, httpsPort);
+        LOG.info("starting at " + serverUrl);
         Server server = new Server();
 
         List<ServerConnector> connectors = new ArrayList<>();
@@ -127,7 +113,7 @@ public class ServerStarter {
         server.setConnectors(connectors.toArray(new ServerConnector[0]));
         server.setHandler(handlers);
         server.start();
-        Runtime.getRuntime().addShutdownHook(new ShutdownHook(true, serverMessage));
+        Runtime.getRuntime().addShutdownHook(new ShutdownHook(true, serverUrl));
         return server;
     }
 
@@ -164,5 +150,19 @@ public class ServerStarter {
             }
         }
         return serverProperties;
+    }
+
+    private static String getServerUrlForLogging(String host, int httpPort, int httpsPort) {
+        StringBuilder sb = new StringBuilder();
+        if ( httpPort > 0 ) {
+            sb.append("http://").append(host).append(":").append(httpPort);
+        }
+        if ( httpPort > 0 && httpsPort > 0 ) {
+            sb.append(" and ");
+        }
+        if ( httpsPort > 0 ) {
+            sb.append("https://").append(host).append(":").append(httpsPort);
+        }
+        return sb.toString();
     }
 }

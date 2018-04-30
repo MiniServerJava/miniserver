@@ -20,7 +20,6 @@ import com.google.inject.name.Named;
 import de.budde.param.GenericResponse;
 import de.budde.param.RandomRequest;
 import de.budde.param.RandomResponse;
-import de.budde.provider.RandomData;
 import de.budde.util.HttpClientWrapper;
 import de.budde.util.ISecurity;
 import de.budde.util.RandomWorker;
@@ -98,7 +97,7 @@ public class RandomGenerator {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response postManyRandoms(@RandomData RandomRequest request) {
+    public Response postManyRandoms(RandomRequest request) {
         LOG.info("POST /rnds request with entity {}", request);
         return createRandomResponse(request.getLimit(), request.getNumber());
     }
