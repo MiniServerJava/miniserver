@@ -1,1 +1,1 @@
-this tests pull requests :-)
+this tests conflicts in pull requests :-)
